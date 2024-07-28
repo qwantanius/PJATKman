@@ -1,58 +1,113 @@
 package src.views;
+import src.configs.Strings;
+
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicSpinnerUI;
 import java.awt.*;
-import java.awt.event.*;
 
 public class BoardSizeDialog extends JDialog {
 
-    private JSpinner widthSpinner;
-    private JSpinner heightSpinner;
+    private final JSpinner widthSpinner = getSpinnerModel();
+    private final JSpinner heightSpinner = getSpinnerModel();
+    private final JLabel widthLabel = new JLabel(GameBoardView.widthLabel);
+    private final JLabel heightLabel = new JLabel(GameBoardView.heightLabel);
+    private final JPanel sizePanel = new JPanel(new GridLayout(2, 2, 10, 10)){
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.drawImage(GameBoardView.dimensionSelectorBackground.getImage(), 0, 0, this);
+        }
+    };
+    private final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)){
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.drawImage(GameBoardView.dimensionSelectorBackground.getImage(), 0, 0, this);
+        }
+    };;
+    private final JButton okButton = new JButton(Strings.BoardSizeDialog.ANSWER_DIALOG_OK){
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.drawImage(GameBoardView.okButton.getImage(), 0, 0, this);
+        }
+    };
+    private final JButton cancelButton = new JButton(Strings.BoardSizeDialog.CANCEL_DIALOG){
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.drawImage(GameBoardView.cancelButton.getImage(), 0, 0, this);
+        }
+    };
+    private final MainMenuFrame parentFrame;
     
-    public BoardSizeDialog(MainMenu parentFrame) {
-        
-        super(parentFrame, "Select Board Size", true);
+    public BoardSizeDialog(MainMenuFrame parentFrame) {
+        super(parentFrame, Strings.BoardSizeDialog.TITLE, true);
+        this.parentFrame = parentFrame;
         setLayout(new BorderLayout());
+        setupSpinnerSizePanel();
+        setupButtonPanel();
 
-        // Create panel for the spinners
-        JPanel sizePanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        add(sizePanel, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
+        pack();
+        setLocationRelativeTo(parentFrame);
+        setVisible(true);
+    }
+
+    private JSpinner getSpinnerModel() {
+        SpinnerModel defModel = new SpinnerNumberModel(10, 10, 100, 1);
+        JSpinner jSpinner = new JSpinner(defModel);
+        jSpinner.setUI(new BasicSpinnerUI() {
+            @Override
+            protected Component createNextButton() {
+                Component c = super.createNextButton();
+                if (c instanceof JButton) {
+                    ((JButton) c).setBackground(Color.BLACK);
+                }
+                return c;
+            }
+
+            @Override
+            protected Component createPreviousButton() {
+                Component c = super.createPreviousButton();
+                if (c instanceof JButton) {
+                    ((JButton) c).setBackground(Color.BLACK);
+                }
+                return c;
+            }
+        });
+        JComponent editor = jSpinner.getEditor();
+        if (editor instanceof JSpinner.DefaultEditor) {
+            ((JSpinner.DefaultEditor)editor).getTextField().setBackground(Color.BLACK);
+            ((JSpinner.DefaultEditor)editor).getTextField().setDisabledTextColor(Color.WHITE);
+        }
+        return jSpinner;
+    }
+
+    private void setupSpinnerSizePanel() {
         sizePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        // Create label and spinner for selecting width
-        JLabel widthLabel = new JLabel("Width:");
         sizePanel.add(widthLabel);
-        SpinnerModel widthModel = new SpinnerNumberModel(10, 10, 100, 1);
-        widthSpinner = new JSpinner(widthModel);
         sizePanel.add(widthSpinner);
-
-        // Create label and spinner for selecting height
-        JLabel heightLabel = new JLabel("Height:");
         sizePanel.add(heightLabel);
-        SpinnerModel heightModel = new SpinnerNumberModel(10, 10, 100, 1);
-        heightSpinner = new JSpinner(heightModel);
         sizePanel.add(heightSpinner);
+    }
 
-        // Create panel for the buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton okButton = new JButton("OK");
+    private void setupButtonPanel() {
         okButton.addActionListener(e -> {
+            MainMenuFrame.blockGame = false;
             int width = (int) widthSpinner.getValue();
             int height = (int) heightSpinner.getValue();
+            System.out.println(width + " : " + height);
             parentFrame.getSettingsService().setGameBoardHeight(height);
             parentFrame.getSettingsService().setGameBoardWidth(width);
             dispose();
         });
-        JButton cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(e -> dispose());
+        cancelButton.addActionListener(e -> {
+            MainMenuFrame.blockGame = true;
+            dispose();
+        });
         buttonPanel.add(okButton);
         buttonPanel.add(cancelButton);
-
-        // Add panels to the dialog
-        add(sizePanel, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
-
-        // Pack and center the dialog on the parent frame
-        pack();
-        setLocationRelativeTo(parentFrame);
-        setVisible(true);
     }
 }
